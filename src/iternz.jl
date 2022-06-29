@@ -48,9 +48,7 @@ struct IterateAbstractArray{T, N, A<:AbstractArray{T, N}}
 end
 
 
-@inline second(x::Tuple) = x[2]
 @inline Base.length(x::IterateAbstractArray) = length(x.x)
-@inline Base.size(x::IterateAbstractArray) = (length(x),)
 @inline Base.eltype(::IterateAbstractArray{T, N}) where {T, N} = Tuple{T, Vararg{Int, N}}
 
 
