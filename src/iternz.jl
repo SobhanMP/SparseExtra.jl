@@ -96,15 +96,17 @@ end
 Base.eltype(::IterateUpperTriangular{T}) where T = Tuple{T, Int, Int}
 # can't know length
 
+Base.IteratorSize(::Type{IterateUpperTriangular{T, S}}) where {T, S} = Base.SizeUnknown()
+
 Base.iterate(x::IterateUpperTriangular) = let a = iterate(x.x)
     if a === nothing 
         nothing
-    else let ((v, i, j), s) = a
-            if i <= j
-                (v, i, j)
-            else
-                iterate(x, s)
-            end
+    else 
+        (_, i, j), state = a
+        if i <= j
+            a
+        else
+            iterate(x, state)
         end
     end
 end
@@ -112,11 +114,12 @@ end
 Base.iterate(x::IterateUpperTriangular, state) = while true
     a = iterate(x.x, state)
     a === nothing && return nothing
-    (v, i, j), s = a
-    i <= j && return ((v, i, j), s)
+    (_, i, j), state = a
+    
+    i <= j && return a
 end
 
 iternz(x::UpperTriangular{T, <:AbstractMatrix{T}}) where T = let a = iternz(x.data)
-    IterateDiagonal{T, typeof(a)}(a)
+    IterateUpperTriangular{T, typeof(a)}(a)
 end
 
