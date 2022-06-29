@@ -68,3 +68,23 @@ end
 end
 
 iternz(x::A) where {T, N, A<:AbstractArray{T, N}} = IterateAbstractArray{T, N, A}(x)
+
+
+# Diagonal
+struct IterateDiagonal{T}
+    x::T
+end
+Base.length(x::IterateDiagonal) = length(x.x)
+Base.iterate(x::IterateDiagonal) = let a = iterate(x.x)
+    a === nothing && return nothing
+    (v, i), s = a
+    (v, i, i), s
+end
+Base.iterate(x::IterateDiagonal, state) = let a = iterate(x.x, state)
+    a === nothing && return nothing
+    (v, i), s = a
+    (v, i, i), s
+end
+iternz(x::Diagonal) = IterateDiagonal(iternz(x.diag))
+
+
