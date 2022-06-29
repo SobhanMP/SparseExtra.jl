@@ -24,7 +24,8 @@ end
     end
 end
 
-test_iternz_arr(a::AbstractArray{T, N}, it=iternz(a)) where {T, N} = begin
+test_iternz_arr(_a::AbstractArray{T, N}, it=iternz(_a)) where {T, N} = begin
+    a = copy(_a)
     x = collect(it)
     @test length(unique(x)) <= length(a)
     @test all((a[i...] == v for (v, i...) in x))
@@ -49,22 +50,17 @@ end
     test_iternz_arr(view(a, 3:6))
 end
 
-test_iternz_diag(a, it) = begin
-    x = collect(it)
-    test_iternz_arr(copy(a), it)
-end
 
 @testset "iternz (Diagonal)" begin
     for i in 1:10
-        d = Diagonal(randn(i))
-        test_iternz_diag(d, iternz(d))
-        e = sprandn(i, 0.5)
-        test_iternz_diag(e, iternz(e))
+        test_iternz_arr(Diagonal(randn(i)))
+        test_iternz_arr(Diagonal(sprandn(i, 0.5)))
     end
 end
 
 @testset "iternz (UpperTriangular)" begin
     for i in 1:10
-        d = randn(i, i)
-
+        test_iternz_arr(UpperTriangular(randn(i, i)))
+        test_iternz_arr(UpperTriangular(sprandn(i, i, 0.5)))
+    end
 end

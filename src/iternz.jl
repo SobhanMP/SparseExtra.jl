@@ -88,3 +88,35 @@ iternz(x::Diagonal{<:AbstractVector{T}}) where T = let a = iternz(x.diag)
     IterateDiagonal{T, typeof(a)}(a)
 end
 
+
+# UpperTriangular
+struct IterateUpperTriangular{T, S}
+    x::S
+end
+Base.eltype(::IterateUpperTriangular{T}) where T = Tuple{T, Int, Int}
+# can't know length
+
+Base.iterate(x::IterateUpperTriangular) = let a = iterate(x.x)
+    if a === nothing 
+        nothing
+    else let ((v, i, j), s) = a
+            if i <= j
+                (v, i, j)
+            else
+                iterate(x, s)
+            end
+        end
+    end
+end
+
+Base.iterate(x::IterateUpperTriangular, state) = while true
+    a = iterate(x.x, state)
+    a === nothing && return nothing
+    (v, i, j), s = a
+    i <= j && return ((v, i, j), s)
+end
+
+iternz(x::UpperTriangular{<:AbstractMatrix{T}}) where T = let a = iternz(x.data)
+    IterateDiagonal{T, typeof(a)}(a)
+end
+
