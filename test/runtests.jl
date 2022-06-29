@@ -24,10 +24,19 @@ end
     end
 end
 
-test_iternz_arr(a, it=iternz(a)) = begin
+test_iternz_arr(a::AbstractArray{T, N}, it=iternz(a)) where {T, N} = begin
     x = collect(it)
-    @test length(unique(x)) == length(a)
+    @test length(unique(x)) <= length(a)
     @test all((a[i...] == v for (v, i...) in x))
+    seen = Set{NTuple{N, Int}}()
+    for (_, i...) in x
+        @test i ∉ seen
+        push!(seen, i)
+    end
+    for I in CartesianIndices(a)
+        i = Tuple(I)
+        @test iszero(a[I]) || i ∈ seen
+    end
 end
 
 @testset "iternz (Array)" begin
@@ -42,17 +51,7 @@ end
 
 test_iternz_diag(a, it) = begin
     x = collect(it)
-    @test length(x) <= length(a.diag)
-    @test length(unique(x)) == length(x)
-    all = Set(1:length(a.diag))
-    for (k, i, j) in x
-        @test i == j
-        @test a[i, j] == k
-        delete!(all, i)
-    end
-    for i in all
-        @test iszero(a[i, i])
-    end
+    test_iternz_arr(copy(a), it)
 end
 
 @testset "iternz (Diagonal)" begin
