@@ -58,5 +58,13 @@ end
     for i in 1:10
         d = Diagonal(randn(i))
         test_iternz_diag(d, iternz(d))
+        e = sprandn(i, 0.5)
+        test_iternz_diag(e, iternz(e))
     end
+end
+
+@testset "iternz (UpperTriangular)" begin
+    for i in 1:10
+        d = randn(i, i)
+
 end
