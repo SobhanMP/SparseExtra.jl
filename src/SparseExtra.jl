@@ -4,6 +4,7 @@ using SparseArrays
 using SparseArrays: AbstractSparseMatrixCSC, AbstractSparseVector
 using SparseArrays: getcolptr, getrowval, getnzval, nonzeroinds
 
+using StaticArrays
 
 include("iternz.jl")
 
