@@ -2,3 +2,7 @@ name = "SparseExtra"
 uuid = "9b3c4d32-3d7d-4a87-a5c7-b3f87cf9d22b"
 authors = ["eta "]
 version = "0.1.0"
+
+[deps]
+FLoops = "cc61a311-1640-44b5-9fba-1b764f453329"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
