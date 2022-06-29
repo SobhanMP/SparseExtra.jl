@@ -84,7 +84,7 @@ Base.iterate(x::IterateDiagonal, state) = let a = iterate(x.x, state)
     (v, i, i), s
 end
 Base.eltype(::IterateDiagonal{T}) where T = Tuple{T, Int, Int}
-iternz(x::Diagonal{<:AbstractVector{T}}) where T = let a = iternz(x.diag)
+iternz(x::Diagonal{T, <:AbstractVector{T}}) where T = let a = iternz(x.diag)
     IterateDiagonal{T, typeof(a)}(a)
 end
 
@@ -116,7 +116,7 @@ Base.iterate(x::IterateUpperTriangular, state) = while true
     i <= j && return ((v, i, j), s)
 end
 
-iternz(x::UpperTriangular{<:AbstractMatrix{T}}) where T = let a = iternz(x.data)
+iternz(x::UpperTriangular{T, <:AbstractMatrix{T}}) where T = let a = iternz(x.data)
     IterateDiagonal{T, typeof(a)}(a)
 end
 
