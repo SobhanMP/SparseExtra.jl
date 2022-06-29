@@ -83,7 +83,5 @@ Base.iterate(x::IterateDiagonal, state) = let a = iterate(x.x, state)
     (v, i), s = a
     (v, i, i), s
 end
-Base.eltype(x::IterateDiagonal{<:AbstractVector{T}}) where T = Tuple{T, Int, Int}
+Base.eltype(::IterateDiagonal{<:AbstractVector{T}}) where T = Tuple{T, Int, Int}
 iternz(x::Diagonal) = IterateDiagonal(iternz(x.diag))
-
-
