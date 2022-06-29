@@ -69,8 +69,8 @@ iternz(x::A) where {T, N, A<:AbstractArray{T, N}} = IterateAbstractArray{T, N, A
 
 
 # Diagonal
-struct IterateDiagonal{T<:AbstractVector}
-    x::T
+struct IterateDiagonal{T, S}
+    x::S
 end
 Base.length(x::IterateDiagonal) = length(x.x)
 Base.iterate(x::IterateDiagonal) = let a = iterate(x.x)
@@ -83,5 +83,8 @@ Base.iterate(x::IterateDiagonal, state) = let a = iterate(x.x, state)
     (v, i), s = a
     (v, i, i), s
 end
-Base.eltype(::IterateDiagonal{<:AbstractVector{T}}) where T = Tuple{T, Int, Int}
-iternz(x::Diagonal) = IterateDiagonal(iternz(x.diag))
+Base.eltype(::IterateDiagonal{T}) where T = Tuple{T, Int, Int}
+iternz(x::Diagonal{<:AbstractVector{T}}) where T = let a = iternz(x.diag)
+    IterateDiagonal{T, typeof(a)}(a)
+end
+
