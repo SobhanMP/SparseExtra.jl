@@ -7,7 +7,7 @@ Collections of stuff developed by me, mostly sparse stuff.
 
 ## `iternz(x)`
 
-This is returns an iterator such that 
+This is returns an iterator over the non-zero elements of the array i.e.
 ```julia
 all(iternz(x)) do (v, k...)
     x[k...] == v
