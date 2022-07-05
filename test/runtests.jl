@@ -58,9 +58,11 @@ end
     end
 end
 
-@testset "iternz (UpperTriangular)" begin
+@testset "iternz (Upper/Lower Triangular)" begin
     for i in 1:10
         test_iternz_arr(UpperTriangular(randn(i, i)))
         test_iternz_arr(UpperTriangular(sprandn(i, i, 0.5)))
+        test_iternz_arr(LowerTriangular(randn(i, i)))
+        test_iternz_arr(LowerTriangular(sprandn(i, i, 0.5)))
     end
 end
