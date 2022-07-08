@@ -9,6 +9,6 @@ using LinearAlgebra, StaticArrays
 include("iternz.jl")
 export iternz
 include("sparse_helpers.jl")
-export unsafe_sum, colnorm!
+export unsafe_sum, colnorm!, colsum, sparse_like
 
 end # module SparseExtra

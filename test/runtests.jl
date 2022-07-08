@@ -87,6 +87,8 @@ end
         colnorm!(a)
         for i in axes(a, 2)
            @test sum(a[:, i]) ≈ 1
+           @test colsum(a, i) ≈ sum(a[:, i])
+           @test colsum(b, i) ≈ sum(b[:, i])
            @test a[:, i] .* sum(b[:, i]) ≈ b[:, i]
         end
     end
