@@ -1,4 +1,5 @@
 using Test, SparseArrays, SparseExtra, LinearAlgebra
+using SparseArrays: getnzval, getcolptr, getrowval
 iternz_naive(x) = let f = findnz(x)
     collect(zip(f[end], f[1:end-1]...))
 end
@@ -64,5 +65,29 @@ end
         test_iternz_arr(UpperTriangular(sprandn(i, i, 0.5)))
         test_iternz_arr(LowerTriangular(randn(i, i)))
         test_iternz_arr(LowerTriangular(sprandn(i, i, 0.5)))
+    end
+end
+
+@testset "unsafe sum" begin
+    for s in 1:100
+        a = randn(s)
+        for i in 1:s,
+            j in i:s
+            @test unsafe_sum(a, i, j) == sum(view(a, i:j))
+        end
+    end
+end
+
+@testset "unsafe sum" begin
+    for s in 1:100
+        a = sprandn(s, s, 0.1)
+        getnzval(a) .= abs.(getnzval(a))
+        a = a + I
+        b = copy(a)
+        colnorm!(a)
+        for i in axes(a, 2)
+           @test sum(a[:, i]) ≈ 1
+           @test a[:, i] .* sum(b[:, i]) ≈ b[:, i]
+        end
     end
 end
