@@ -53,7 +53,7 @@ function getindex_(A::SparseMatrixCSC{Tv, Ti}, i0::T, i1::T)::T where {Tv, Ti, T
     r1 = convert(Ti, A.colptr[i1])
     r2 = convert(Ti, A.colptr[i1 + 1] - 1)
     (r1 > r2) && return zero(T)
-    r1 = searchsortedfirst(A.rowval, i0, r1, r2, Base.Forward)
-    @boundscheck !((r1 > r2) || (rowvals(A)[r1] != i0))
-    return r1
+    r3 = searchsortedfirst(A.rowval, i0, r1, r2, Base.Forward)
+    @boundscheck !((r3 > r2) || (rowvals(A)[r3] != i0))
+    return r3
 end
