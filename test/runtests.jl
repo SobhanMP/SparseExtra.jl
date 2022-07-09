@@ -1,5 +1,34 @@
 using Test, SparseArrays, SparseExtra, LinearAlgebra
 using SparseArrays: getnzval, getcolptr, getrowval
+using Graphs
+using Graphs.Experimental.ShortestPaths: shortest_paths, dists
+using StaticArrays
+
+@testset "dijkstra" begin
+    graph = Graphs.SimpleGraphs.erdos_renyi(100, 0.4; is_directed=true)
+    state = DijkstraState(nv(graph), Float64, SVector{0, Int}())
+    weight = spzeros(nv(graph), nv(graph))
+    for i in vertices(graph),
+        j in outneighbors(graph, i)
+        weight[i, j] = rand() + 1e-3
+    end
+    tw = sparse(transpose(weight))
+    for src in vertices(graph)
+        state = DijkstraState(state, SVector(src))
+        dijkstra(tw, state)
+        odj = shortest_paths(graph, src, transpose(tw))
+        @test dists(odj) ≈ state.distance
+        for j in vertices(graph)
+            i = state.parent[j]
+            i == 0 && continue
+            
+            @test has_edge(graph, i, j)
+            @test state.distance[i] + tw[j, i] ≈ state.distance[j]
+        end
+    end
+ end
+
+
 iternz_naive(x) = let f = findnz(x)
     collect(zip(f[end], f[1:end-1]...))
 end
@@ -29,6 +58,7 @@ test_iternz_arr(_a::AbstractArray{T, N}, it=iternz(_a)) where {T, N} = begin
     a = copy(_a)
     x = collect(it)
     @test length(unique(x)) <= length(a)
+    @test length(unique(x)) == length(x)
     @test all((a[i...] == v for (v, i...) in x))
     seen = Set{NTuple{N, Int}}()
     for (_, i...) in x
