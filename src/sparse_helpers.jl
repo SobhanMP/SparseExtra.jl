@@ -48,10 +48,10 @@ sparse_like(t::SparseMatrixCSC) =
 
 
 
-function getindex_(A::SparseMatrixCSC, i0::T, i1::T)::T where T
+function getindex_(A::SparseMatrixCSC{Tv, Ti}, i0::T, i1::T)::T where {Tv, Ti, T}
     @boundscheck checkbounds(A, i0, i1)
-    r1 = STi(A.colptr[i1])
-    r2 = STi(A.colptr[i1+1]-1)
+    r1 = convert(Ti, A.colptr[i1])
+    r2 = convert(Ti, A.colptr[i1 + 1] - 1)
     (r1 > r2) && return zero(T)
     r1 = searchsortedfirst(A.rowval, i0, r1, r2, Base.Forward)
     @boundscheck !((r1 > r2) || (rowvals(A)[r1] != i0))
