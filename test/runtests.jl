@@ -93,3 +93,12 @@ end
         end
     end
 end
+
+@testset "par solve" begin
+    for s in 1:100
+        a = sprandn(s, s, 0.1) + I
+        b = randn(s, s)
+        @test maximum(par_inv(lu(a)) * a - I) <= 1e-5
+        @test a \ b ≈ par_solve(lu(a), b)
+    end
+end
