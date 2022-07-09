@@ -90,8 +90,6 @@ Base.iterate(p::Path2Edge, state=1) =
         (p.x[state], p.x[state+1]), state + 1
     end
 
-
-
 function sparse_feature(g; key=:time, n=nv(g))::SparseMatrixCSC{Float64, STi}
     w = spzeros(Float64, STi, n, n)
     for j in vertices(g), i in inneighbors(g, j)

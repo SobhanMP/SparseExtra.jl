@@ -149,7 +149,7 @@ end
     end
 end
 
-@test "MkPair" begin
+@test "Path2Edge" begin
     for _ in 1:10
         a = rand(1:100, 1000)
         for i in [10, 200, 1000]

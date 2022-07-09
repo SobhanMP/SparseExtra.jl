@@ -15,5 +15,5 @@ export unsafe_sum, colnorm!, colsum, sparse_like
 include("solve.jl")
 export par_solve!, par_solve, par_inv!, par_inv
 include("graph.jl")
-export dijkstra, DijkstraState
+export dijkstra, DijkstraState, sparse_feature_vec, sparse_feature, Path2Edge, path_cost, path_cost_nt
 end # module SparseExtra
