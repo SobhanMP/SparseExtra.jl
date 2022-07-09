@@ -70,3 +70,75 @@ function extract_path(state::DijkstraState{T, U}, d) where {T, U}
     end
     return r
 end
+
+
+struct Path2Edge{T}
+    x::Vector{T}
+    e::Int
+    function Path2Edge(x::Vector{T}, e=length(x)) where T
+        @assert length(x) >= e
+        new{T}(x, e)
+    end
+end
+
+Base.length(p::Path2Edge) = p.e - 1
+Base.eltype(::Path2Edge{T}) where {T} = NTuple{2,T}
+Base.iterate(p::Path2Edge, state=1) =
+    if p.e <= state
+        nothing
+    else
+        (p.x[state], p.x[state+1]), state + 1
+    end
+
+
+
+function sparse_feature(g; key=:time, n=nv(g))::SparseMatrixCSC{Float64, STi}
+    w = spzeros(Float64, STi, n, n)
+    for j in vertices(g), i in inneighbors(g, j)
+        w[i, j] = g[i, j][key]
+    end
+    w
+end
+sparse_feature_vec(T, g; key) = T[convert(T, get_prop(g, i, j, key))
+    for j in vertices(g) for i in inneighbors(g, j)]
+
+function sparse_feature(T, g; key=:time, n=nv(g))::SparseMatrixCSC{T, STi}
+    w = spzeros(T, STi, n, n)
+    for j in vertices(g), i in inneighbors(g, j)
+        w[i, j] = convert(T, get_prop(g, i, j, key))
+    end
+    w
+end
+
+function path_cost(w::SparseMatrixCSC{T}, r, n=length(r)) where T
+    cost = zero(T)
+    for (i, j) in Path2Edge(r, n)
+        cost += w[i, j]
+    end
+    cost
+end
+
+function path_cost(f::F, w::SparseMatrixCSC{T}, r, n=length(r)) where {F, T}
+    cost = zero(f(zero(T)))
+    for (i, j) in Path2Edge(r, n)
+        cost += f(w[i, j])
+    end
+    cost
+end
+
+function path_cost_nt(w::SparseMatrixCSC{T}, r, n=length(r)) where T
+    cost = zero(T)
+    for (i, j) in Path2Edge(r, n)
+        cost += w[j, i]
+    end
+    cost
+end
+
+function path_cost_nt(f, w::SparseMatrixCSC{T}, r, n=length(r)) where T
+    cost = zero(T)
+    for (i, j) in Path2Edge(r, n)
+        cost += f(w[j, i])
+    end
+    cost
+end
+
