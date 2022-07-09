@@ -60,11 +60,11 @@ Base.iterate(x::IterateNZ{N, <:AbstractArray}, state) where N = @inbounds begin
     (mi, Tuple(i)...), (nms, ii, s)
 end
 
-@inline Base.iterate(x::IterateNZ{2, StridedMatrix{T}}) where T = begin
+@inline function Base.iterate(x::IterateNZ{2, <:StridedMatrix})
     ind, i, j = firstindex(x.m), 1, 1
-    (x.m[ind], i, j), (ind, i, j)
+    return ((x.m[ind], i, j), (ind, i, j))
 end
-@inline Base.iterate(x::IterateNZ{2, StridedMatrix{T}}, state) where T = @inbounds begin
+@inline Base.iterate(x::IterateNZ{2, <:StridedMatrix}, state) = @inbounds begin
     ind, i, j = state
     i += 1
     ind += stride(x.m, 1)
