@@ -28,6 +28,22 @@ using StaticArrays
     end
  end
 
+@testset "sparse_like" begin
+    function good_same(t, z, eq=true)
+        @test size(z) == size(t)
+        @test getcolptr(z) === getcolptr(t)
+        @test getrowval(z) === getrowval(t)
+        eq && @test getnzval(z) == getnzval(t)
+        @test getnzval(z) !== getnzval(t)
+    end
+    t = sprandn(100, 100, 0.1)
+    good_same(t, sparse_like(t))
+    good_same(t, sparse_like(t, rand(1:2, nnz(t))), false)
+    good_same(t, sparse_like(t, 0), false)
+    all(getnzval(sparse_like(t, 2)) .== 2)
+    good_same(t, sparse_like(t, Bool), false)
+    @test isa(getnzval(sparse_like(t, Bool)), Vector{Bool})
+end
 
 iternz_naive(x) = let f = findnz(x)
     collect(zip(f[end], f[1:end-1]...))
