@@ -37,10 +37,10 @@ function colsum(x::SparseMatrixCSC, i)
     return unsafe_sum(getnzval(x), getcolptr(x)[i], getcolptr(x)[i + 1] - 1)
 end
 
-sparse_like(t::SparseMatrixCSC{Tv}, T::Type=Tv) where Tv =
+sparse_like(t::SparseMatrixCSC, T::Type) =
     SparseMatrixCSC(t.m, t.n, t.colptr, t.rowval, Vector{T}(undef, nnz(t)))
-sparse_like(t::SparseMatrixCSC{Tv, Ti}, z::T) where {T, Tv, Ti} =
-    SparseMatrixCSC{T, Ti}(t.m, t.n, t.colptr, t.rowval, fill(z, nnz(t)))
+sparse_like(t::SparseMatrixCSC, z) =
+    SparseMatrixCSC(t.m, t.n, t.colptr, t.rowval, fill(z, nnz(t)))
 sparse_like(t::SparseMatrixCSC, z::Vector) =
     SparseMatrixCSC(t.m, t.n, t.colptr, t.rowval, z)
 sparse_like(t::SparseMatrixCSC) =
