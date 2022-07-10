@@ -3,6 +3,25 @@ using SparseArrays: getnzval, getcolptr, getrowval
 using Graphs
 using Graphs.Experimental.ShortestPaths: shortest_paths, dists
 using StaticArrays
+using VectorizationBase
+
+
+@testset "simd argmax" begin
+    function f(t, i)
+        tx = ntuple(_ -> rand(t), i)
+        ax = collect(tx)
+        vx = Vec{i, t}(tx...)
+        @test argmax(vx) == argmax(ax)
+        
+        return
+    end
+
+    for t in [Int8, Int32, Int64, Float64, Float32],
+        i in 1:100,
+        j in 1:100
+        f(Int8, i)
+    end
+end
 
 @testset "dijkstra" begin
     graph = Graphs.SimpleGraphs.erdos_renyi(100, 0.4; is_directed=true)
@@ -157,3 +176,4 @@ end
         end
     end
 end
+
