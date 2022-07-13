@@ -158,7 +158,6 @@ end
         end
     end
 end
-
 @testset "par solve" begin
     for s in 1:100
         a = sprandn(s, s, 0.1) + I
@@ -167,7 +166,6 @@ end
         @test a \ b ≈ par_solve(lu(a), b)
     end
 end
-
 @testset "Path2Edge" begin
     for _ in 1:10
         a = rand(1:100, 1000)
