@@ -196,4 +196,5 @@ end
     all(getnzval(sparse_like(t, 2)) .== 2)
     good_same(t, sparse_like(t, Bool), false)
     @test isa(getnzval(sparse_like(t, Bool)), Vector{Bool})
+
 end
