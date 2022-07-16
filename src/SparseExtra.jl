@@ -5,8 +5,13 @@ using SparseArrays: AbstractSparseMatrixCSC, AbstractSparseVector
 using SparseArrays: getcolptr, getrowval, getnzval, nonzeroinds
 using SparseArrays: rowvals, nonzeros
 using SparseArrays: sparse_check_Ti, _goodbuffers
-using SparseArrays.UMFPACK: UmfpackLU
-using SparseArrays: UMFPACK
+if isdefined(SparseArrays, :UMFPACK)
+    using SparseArrays.UMFPACK: UmfpackLU
+    using SparseArrays: UMFPACK
+else
+    using SuiteSparse.UMFPACK: UmfpackLU
+    using SuiteSparse: UMFPACK
+end
 
 using VectorizationBase
 using VectorizationBase: vsum, vprod, vmaximum, vminimum, bitselect
