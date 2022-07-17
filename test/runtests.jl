@@ -14,7 +14,7 @@ end
 
 
 test_iternz_arr(_a::AbstractArray{T, N}, it=iternz(_a)) where {T, N} = begin
-    a = copy(_a)
+    a = Array(_a)
     x = collect(it)
     @test length(unique(x)) <= length(a)
     @test length(unique(x)) == length(x)
@@ -26,6 +26,16 @@ test_iternz_arr(_a::AbstractArray{T, N}, it=iternz(_a)) where {T, N} = begin
     end
     for I in CartesianIndices(a)
         @test iszero(a[I]) || Tuple(I) ∈ seen
+    end
+end
+@testset "iternz (Symmetric)" begin
+    for i in 1:20
+        for uplo in [:U, :L]
+            A = Symmetric(sprandn(i, i, 1 / i), uplo)
+            test_iternz_arr(A)
+            B = Symmetric(rand(i, i), uplo)
+            test_iternz_arr(B)
+        end
     end
 end
 

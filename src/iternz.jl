@@ -25,7 +25,7 @@ Base.length(x::IterateNZ{2, <:AbstractSparseMatrixCSC}) = nnz(x.m)
 end
 @inline skip_col(x::IterateNZ{2, <:AbstractSparseMatrixCSC}, state) =
 @inbounds let (j, ind) = state, m = x.m
-    j + 1, getcolptr(m)[j + 1]
+    j, max(getcolptr(m)[j + 1] - 1, ind)
 end
 
 @inline skip_row_to(x::IterateNZ{2, <:AbstractSparseMatrixCSC{Tv, Ti}}, state, i) where {Tv, Ti}=
@@ -69,38 +69,40 @@ end
     (mi, Tuple(i)...), (nms, ii, s)
 end
 
-# @inline function Base.iterate(x::IterateNZ{2, <:StridedMatrix})
-#     ind, i, j = firstindex(x.m), 1, 1
-#     return ((x.m[ind], i, j), (ind, i, j))
-# end
-# @inline Base.iterate(x::IterateNZ{2, <:StridedMatrix}, state) = @inbounds begin
-#     ind, i, j = state
-#     i += 1
-#     ind += stride(x.m, 1)
-#     if i > size(x.m, 1)
-#         i = 1
-#         j += 1
-#         ind = ind - size(x.m, 1) * stride(x.m, 1) + stride(x.m, 2)
-#     end
-#     if j > size(x.m, 2)
-#         return nothing
-#     end
-#     (x.m[ind], i, j), (ind, i, j)
-# end
+@inline function Base.iterate(x::IterateNZ{2, <:StridedMatrix})
+    ind, i, j = firstindex(x.m), 1, 1
+    return ((x.m[ind], i, j), (ind, i, j))
+end
+@inline Base.iterate(x::IterateNZ{2, <:StridedMatrix}, state) = @inbounds begin
+    ind, i, j = state
+    i += 1
+    
+    if i > size(x.m, 1)
+        ind = ind + stride(x.m, 2) - (size(x.m, 1) - 1) * stride(x.m, 1)
+        i = 1
+        j += 1
+    else
+        ind += stride(x.m, 1)
+    end
+    if j > size(x.m, 2)
+        return nothing
+    end
+    (x.m[ind], i, j), (ind, i, j)
+end
 
-# @inline skip_col(x::IterateNZ{2, <:StridedMatrix}, state) =
-# @inbounds begin
-#     ind, i, j = state
-#     ind = ind - (i - 1) * stride(x.m, 1) + stride(x.m, 2)
-#     (ind, 1, j + 1)
-# end
+@inline skip_col(x::IterateNZ{2, <:StridedMatrix}, state) =
+@inbounds begin
+    ind, i, j = state
+    i1 = size(x.m, 1)
+    ind = ind + (i1 - i) * stride(x.m, 1)
+    (ind, i1, j)
+end
 
-# @inline skip_col_to(x::IterateNZ{2, <:StridedMatrix}, state, i1) =
-# @inbounds begin
-#     ind, i, j = state
-#     ind = ind - (i - 1) * stride(x.m, 1) + stride(x.m, 2)
-#     (ind, 1, j + 1)
-# end
+@inline skip_row_to(x::IterateNZ{2, <:StridedMatrix}, state, i1) =
+@inbounds begin
+    ind, i, j = state
+    (ind + (i1 - i - 1) * stride(x.m, 1), i1 - 1, j)
+end
 
 Base.IteratorSize(x::IterateNZ{2, <:Transpose}) = Base.IteratorSize(iternz(x.m.parent))
 Base.length(x::IterateNZ{2, <:Transpose}) = length(iternz(x.m.parent))
@@ -190,18 +192,55 @@ end
     while a !== nothing
         (v, i, j), state = a
         i >= j && return (v, i, j), (iterator, state)
-        state = skip_row_to(iterator, state, i)
+        state = skip_row_to(iterator, state, j)
         a = iterate(iterator, state)
     end
     nothing
 end
 
 
-Base.IteratorSize(::IterateNZ{2, <:LowerTriangular}) = Base.SizeUnknown()
+Base.IteratorSize(::IterateNZ{2, <:Symmetric}) = Base.SizeUnknown()
+
+@inline Base.iterate(x::IterateNZ{2, <:Symmetric}) =
+let iterator = iternz(x.m.data)
+    iternzsym(x.m, iterator, iterate(iterator))
+end
+
+@inline Base.iterate(x::IterateNZ{2, <:Symmetric}, state) =
+let (iterator, (v, i, j), r, s) = state
+    if r
+        (v, j, i), (iterator, (v, i, j), false, s)
+    else
+        iternzsym(x.m, iterator, iterate(iterator, s))
+    end
+end
+
+@inline iternzsym(m::Symmetric, iterator, a) = @inbounds begin
+    while a !== nothing
+        r, state = a
+        (_, i, j) = r
+        if m.uplo == 'U'
+            i <= j && return r, (iterator, r, i != j, state)
+            state = skip_col(iterator, state)
+        elseif m.uplo == 'L'
+            i >= j && return r, (iterator, r, i != j, state)
+            state = skip_row_to(iterator, state, j)
+        end
+        a = iterate(iterator, state)
+    end
+    nothing
+end
+
+
+
+
 
 function iternz_dot(x::AbstractVector, A::AbstractArray{2}, y) where Tv
+    (length(x), length(y)) == size(A) || throw(ArgumentError("bad shape"))
     acc = zero(promote_type(eltype(x), eltype(A), eltype(y)))
     @inbounds for (v, i, j) in iternz(A)
         acc += x[i] * v * y[j]
     end
 end
+
+
