@@ -234,13 +234,3 @@ end
 
 
 
-
-function iternz_dot(x::AbstractVector, A::AbstractArray{2}, y) where Tv
-    (length(x), length(y)) == size(A) || throw(ArgumentError("bad shape"))
-    acc = zero(promote_type(eltype(x), eltype(A), eltype(y)))
-    @inbounds for (v, i, j) in iternz(A)
-        acc += x[i] * v * y[j]
-    end
-end
-
-
