@@ -43,5 +43,3 @@ elseif i == 2
 else
     error()
 end
-SparseArrays._goodbuffers(S::AbstractSparseMatrixCSC) = _goodbuffers(size(S)..., getcolptr(S), getrowval(S), nonzeros(S))
-SparseArrays._checkbuffers(S::AbstractSparseMatrixCSC) = (@assert _goodbuffers(S); S)
