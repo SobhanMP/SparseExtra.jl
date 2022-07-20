@@ -9,6 +9,12 @@ if LU_has_lock
         UMFPACK.duplicate(F::Transpose{T, <:UmfpackLU}) where T = Transpose(duplicate(F.parent))
         UMFPACK.duplicate(F::Adjoint{T, <:UmfpackLU}) where T = Adjoint(duplicate(F.parent))
     end
+else
+    @eval begin
+        SparseArrays._goodbuffers(S::AbstractSparseMatrixCSC) = _goodbuffers(size(S)..., getcolptr(S), getrowval(S), nonzeros(S))
+        SparseArrays._checkbuffers(S::AbstractSparseMatrixCSC) = (@assert _goodbuffers(S); S)
+        duplicate(x) = x
+    end
 end
 function par_solve!(x, lu::LU, b::AbstractMatrix; cols=axes(b, 2)) where F
     if LU_has_lock
@@ -62,3 +68,26 @@ end
 
 par_inv!(x, lu::LU; cols=1:size(lu, 2)) = par_solve_f!(x, _par_inv_init, _par_inv_fin, lu; cols)
 par_inv(lu::LU{T}; cols=1:size(lu, 2)) where T = par_inv!(Matrix{T}(undef, size(lu)...), lu; cols)
+
+
+using Base.Threads
+using SparseArrays, LinearAlgebra
+function par_ldiv!_t_f(lhs, F, rhs; cols)
+    for i in cols
+        ldiv!(view(lhs, :, i), F, view(rhs, :, i))
+    end
+    return
+end
+
+function par_ldiv!_t(lhs::AbstractMatrix{T}, F, rhs::AbstractMatrix{T}; cols=axes(rhs, 2)) where T
+    size(lhs) == size(rhs) || error("rhs and lhs are not equal sized")
+    c = ceil(Int, length(cols) / nthreads())
+    foreach(wait, [
+        @spawn par_ldiv!_t_f(lhs, duplicate(F), rhs;
+            cols = view(cols, (i - 1) * c + 1: min(i * c, length(cols))))
+            for i in 1:nthreads()])
+    return lhs
+end
+par_ldiv_t(F, rhs; cols=axes(rhs, 2)) = par_ldiv!(similar(rhs), F, rhs; cols)
+
+export par_ldiv!_t

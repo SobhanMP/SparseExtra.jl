@@ -4,9 +4,6 @@
 # Collections of mostly sparse stuff developed by me.
 
 
-
-
-
 # # The `iternz` API
 
 # This returns an iterator over the structural non-zero elements of the array (elements that aren't zero due to the structure not zero elements) i.e.
@@ -144,3 +141,20 @@ dot(x, A, y) ≈ iternz_dot(x, A, y) && dot(x, SA, y) ≈ iternz_dot(x, SA, y)
 
 
 
+# # parallel ldiv!
+using SparseExtra, LinearAlgebra, SparseArrays, BenchmarkTools
+const C = A + I
+const B = Matrix(sprandn(size(C)..., 0.1));
+const F = lu(C);
+const X = similar(B);
+
+# Standard:
+@benchmark ldiv!($X, $F, $B)
+
+#With FLoops.jl:
+
+@benchmark par_solve!($X, $F, $B)
+
+# with manual loops
+
+@benchmark par_ldiv!_t($X, $F, $B)
