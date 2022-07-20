@@ -149,9 +149,10 @@ const F = lu(C);
 const X = similar(B);
 
 # Standard:
+
 @benchmark ldiv!($X, $F, $B)
 
-#With FLoops.jl:
+# With FLoops.jl:
 
 @benchmark par_solve!($X, $F, $B)
 
