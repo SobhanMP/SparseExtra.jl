@@ -1,6 +1,8 @@
-function unsafe_sum(a::AbstractVector{T}, i0::Integer=1, i1::Integer=length(a)) where {T}
+@inline unsafe_sum(a, i0=firstindex(a), i1=lastindex) = unsafe_sum(a, i0:i1)
+function unsafe_sum(a::StridedVector{T}, r) where {T}
+    stride(a, 1) == 1 || error()
     s = zero(T)
-    @inbounds for i in i0:i1
+    @inbounds for i in r
         s += a[i]
     end
     s
@@ -25,14 +27,15 @@ function colnorm!(x::SparseMatrixCSC{Tv, Ti}, abs, offset) where {Tv, Ti}
         else
             zero(offset)
         end
-        s = unsafe_sum(getnzval(x), getcolptr(x)[i], getcolptr(x)[i + 1] - 1) + of
-        @inbounds for j in a:b
-            xnz[j] /= s
+        r = getcolptr(x)[i]: getcolptr(x)[i + 1] - 1
+        s = unsafe_sum(nonzeros(x), r) + of
+        @inbounds for j in r
+            nonzeros(x)[j] /= s
         end
     end
 end
 
-function colsum(x::SparseMatrixCSC, i)
+@inline function colsum(x::SparseMatrixCSC, i)
     @boundscheck checkbounds(x, :, i)
     return unsafe_sum(getnzval(x), getcolptr(x)[i], getcolptr(x)[i + 1] - 1)
 end

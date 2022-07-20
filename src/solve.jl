@@ -1,7 +1,7 @@
 """
 solve lu\\b in parallel
 """
-const LU{T} = Union{Transpose{UmfpackLU{T}}, UmfpackLU{T}}
+const LU{T} = Union{Transpose{T, <: UmfpackLU{T}}, UmfpackLU{T}}
 const LU_has_lock = hasfield(UmfpackLU, :lock)
 if LU_has_lock
     @eval begin
@@ -16,17 +16,20 @@ else
         duplicate(x) = x
     end
 end
-function par_solve!(x, lu::LU, b::AbstractMatrix; cols=axes(b, 2)) where F
+@inline pfno(a...) = nothing
+function par_solve!(x, lu::LU, b::AbstractMatrix; cols=axes(b, 2), f::F=nothing) where F
     if LU_has_lock
         @floop for i in cols
             @init dlu = duplicate(lu)
             v = view(x, :, i)
             ldiv!(v, dlu, view(b, :, i))
+            if f !== nothing f(v, i) end
         end
     else
         @floop for i in cols
             v = view(x, :, i)
             ldiv!(v, lu, view(b, :, i))
+            if f !== nothing f(v, i) end
         end
     end
     return x
@@ -55,7 +58,7 @@ function par_solve_f!(x, f!::F, g!::G, lu::LU{T}; cols=1:size(lu, 2)) where {T, 
     return x
 end
 
-@inline pfno(a...) = nothing
+
 
 function _par_inv_init(x, i)
     x[i] = one(eltype(x))
