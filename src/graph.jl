@@ -1,3 +1,6 @@
+"""
+    Work structure for `dijkstra`
+"""
 struct DijkstraState{T<:Real,U<:Integer}
     parent::Vector{U}
     distance::Vector{T}
@@ -10,7 +13,11 @@ function set_src(state::DijkstraState{T, U}, srcs) where {T, U}
         state.q[src] = zero(T)
     end
 end
+"""
+    DijkstraState(nv, T, src::AbstractVector{U}) where U -> DijkstraState
 
+Initialize a `DijkstraState` for a graph of size `nv`, weight of type `T`, and srcs as initiale points
+"""
 function DijkstraState(nv, T, srcs::AbstractVector{U}) where U
     state = DijkstraState{T,U}(
         zeros(U, nv), 
@@ -20,8 +27,11 @@ function DijkstraState(nv, T, srcs::AbstractVector{U}) where U
     set_src(state, srcs)
     return state
 end
+
+
 """
-reuse dijkstra state
+    DijkstraState(::DijkstraState{T, U}, src) where {T, U} -> DijkstraState{T, U}
+clean up the DijkstraState to reusue the memory and avoid reallocations
 """
 function DijkstraState(state::DijkstraState{T, U}, srcs) where {T, U}
     fill!(state.parent, zero(U))
@@ -32,6 +42,12 @@ function DijkstraState(state::DijkstraState{T, U}, srcs) where {T, U}
     return state
 end
 
+
+"""
+    dijkstra(distmx::AbstractSparseMatrixCSC, state::DijkstraState, [target]) -> Nothing
+
+Given a `distmx` such that `distmx[j, i]` is the distance of the arc i→j and strucutral zeros mean no arc, run the dijkstra algorithm until termination or reaching target (whichever happens first).
+"""
 function dijkstra(
     distmx::SparseArrays.AbstractSparseMatrixCSC{T},
     state::DijkstraState{T,U},
@@ -60,7 +76,11 @@ function dijkstra(
         end
     end
 end
+"""
+    extract_path(::DijkstraState{T, U}, d) -> U[]
 
+return the path found to `d`.
+"""
 function extract_path(state::DijkstraState{T, U}, d) where {T, U}
     r = U[]
     c = d
@@ -71,7 +91,11 @@ function extract_path(state::DijkstraState{T, U}, d) where {T, U}
     return r
 end
 
+"""
+    Path2Edge(x, [e=length(x)])
 
+[Unbenchmarked] faster version of `zip(view(x, 1:e), view(x, 2:e))`. Only works on 1-index based arrays with unit strides
+"""
 struct Path2Edge{T}
     x::Vector{T}
     e::Int
@@ -90,7 +114,10 @@ Base.iterate(p::Path2Edge, state=1) =
         (p.x[state], p.x[state+1]), state + 1
     end
 
-
+"""
+    path_cost(::AbstractSparseMatrixCSC, r, n)
+return the total weight  of the path r[1:n]
+"""
 function path_cost(w::SparseMatrixCSC{T}, r, n=length(r)) where T
     cost = zero(T)
     for (i, j) in Path2Edge(r, n)
@@ -98,7 +125,10 @@ function path_cost(w::SparseMatrixCSC{T}, r, n=length(r)) where T
     end
     cost
 end
-
+"""
+    path_cost(f::Function, ::AbstractSparseMatrixCSC, r, n)
+return the total weight of the path r[1:n], with `f` applied to each weight before summation
+"""
 function path_cost(f::F, w::SparseMatrixCSC{T}, r, n=length(r)) where {F, T}
     cost = zero(f(zero(T)))
     for (i, j) in Path2Edge(r, n)
@@ -106,7 +136,10 @@ function path_cost(f::F, w::SparseMatrixCSC{T}, r, n=length(r)) where {F, T}
     end
     cost
 end
-
+"""
+    path_cost_nt(::AbstractSparseMatrixCSC, r, n)
+like `path_cost`, but for matrices that are transposed
+"""
 function path_cost_nt(w::SparseMatrixCSC{T}, r, n=length(r)) where T
     cost = zero(T)
     for (i, j) in Path2Edge(r, n)
@@ -115,6 +148,10 @@ function path_cost_nt(w::SparseMatrixCSC{T}, r, n=length(r)) where T
     cost
 end
 
+"""
+    path_cost_nt(f::Function, ::AbstractSparseMatrixCSC, r, n)
+like `path_cost`, but for matrices that are transposed
+"""
 function path_cost_nt(f, w::SparseMatrixCSC{T}, r, n=length(r)) where T
     cost = zero(T)
     for (i, j) in Path2Edge(r, n)

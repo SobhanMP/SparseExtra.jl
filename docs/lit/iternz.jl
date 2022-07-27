@@ -15,7 +15,7 @@
 
 using BenchmarkTools, SparseArrays
 const n = 10_000
-const A = sprandn(n, n, max(1000, 0.1 * n*n) / n / n);
+const A = sprandn(n, n, 5 / n);
 
 function general(x::AbstractMatrix)
     s = zero(eltype(x))

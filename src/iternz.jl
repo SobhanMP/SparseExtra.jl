@@ -1,17 +1,28 @@
-
-
-# AbstractSparseMatrixCSC
+"""
+Helper structure for iternz, all methods. `iternz` just returns this wrapper and the `Base.iterate` method is overloaded.
+"""
 struct IterateNZ{N, T}
     m::T
 end
 
-
+"""
+    `iternz(x)`
+shortcut for `IterateNZ`.
+"""
 iternz(x) = IterateNZ{ndims(x), typeof(x)}(x)
 Base.eltype(x::IterateNZ{N}) where N = Tuple{eltype(x.m), Vararg{Int, N}}
 # default definition, do nothing
+"""
+    skip_col(::IterateNZ, ::S) -> S
+
+Move the cursor to the bottom of the current column. Does nothing by default and only makes sense for matrices.
+"""
 @inline skip_col(::IterateNZ, s) = s
-@inline skip_row(::IterateNZ, s) = s
-@inline skip_col_to(::IterateNZ, s, i) = s
+"""
+    skip_row_to(::IterateNZ, ::S, i) -> S
+
+Move the cursor to the bottom of the `i-1`th element. Does nothing by default and only makes sense for matrices. 
+"""
 @inline skip_row_to(::IterateNZ, s, i) = s
 
 Base.length(x::IterateNZ{2, <:AbstractSparseMatrixCSC}) = nnz(x.m)

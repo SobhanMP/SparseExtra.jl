@@ -25,6 +25,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "`iternz`" => "iternz.md"
+        "`iternz`" => "iternz.md",
+        "Parallel `ldiv`" => "par_ldiv.md",
     ]
 )
