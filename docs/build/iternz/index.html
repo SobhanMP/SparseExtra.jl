@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>iternz · SparseExtra.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link rel="canonical" href="https://SobhanMP.github.io/SparseExtra.jl/iternz/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">SparseExtra.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href><code>iternz</code></a><ul class="internal"><li><a class="tocitem" href="#API:"><span>API:</span></a></li><li><a class="tocitem" href="#TODO"><span>TODO</span></a></li></ul></li><li><a class="tocitem" href="../par_ldiv/">Parallel <code>ldiv</code></a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href><code>iternz</code></a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href><code>iternz</code></a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/SobhanMP/SparseExtra.jl/blob/main/docs/lit/iternz.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="The-iternz-API"><a class="docs-heading-anchor" href="#The-iternz-API">The <code>iternz</code> API</a><a id="The-iternz-API-1"></a><a class="docs-heading-anchor-permalink" href="#The-iternz-API" title="Permalink"></a></h1><p>This returns an iterator over the structural non-zero elements of the array (elements that aren&#39;t zero due to the structure not zero elements) i.e.</p><pre><code class="language-julia hljs">all(iternz(x)) do (v, k...)
+    x[k...] == v
+end</code></pre><p>The big idea is to abstract away all of the speciall loops needed to iterate over sparse containers. These include special Linear Algebra matrices like <code>Diagonal</code>, and <code>UpperTriangular</code> or <code>SparseMatrixCSC</code>. Furethemore it&#39;s possible to use this recursively i.e. An iteration over a <code>Diagonal{SparseVector}</code> will skip the zero elements (if they are not stored) of the SparseVector.</p><p>For an example let&#39;s take the sum of the elements in a matrix such that <code>(i + j) % 7 == 0</code>. The most general way of writing it is</p><pre><code class="language-julia hljs">using BenchmarkTools, SparseArrays
+const n = 10_000
+const A = sprandn(n, n, max(1000, 0.1 * n*n) / n / n);
+
+function general(x::AbstractMatrix)
+    s = zero(eltype(x))
+    @inbounds for j in axes(x, 2),
+        i in axes(x, 1)
+        if (i + j) % 7 == 0
+            s += x[i, j]
+        end
+    end
+    return s
+end
+@benchmark general($A)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 11 samples with 1 evaluation.
+ Range (min … max):  461.048 ms … 468.458 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     463.496 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   463.928 ms ±   2.200 ms  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+                                       █                         
+  ▇▁▇▁▁▁▁▁▁▁▇▁▁▁▇▇▁▁▁▁▇▁▁▇▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▇ ▁
+  461 ms           Histogram: frequency by time          468 ms &lt;
+
+ Memory estimate: 0 bytes, allocs estimate: 0.</code></pre><p>Now this is pretty bad, we can improve the performance by using the sparse structure of the problem</p><pre><code class="language-julia hljs">using SparseArrays: getcolptr, nonzeros, rowvals
+
+function sparse_only(x::SparseMatrixCSC)
+    s = zero(eltype(x))
+    @inbounds for j in axes(x, 2),
+        ind in getcolptr(x)[j]:getcolptr(x)[j + 1] - 1
+
+        i = rowvals(x)[ind]
+        if (i + j) % 7 == 0
+            s += nonzeros(x)[ind]
+        end
+    end
+    return s
+end</code></pre><pre><code class="nohighlight hljs">sparse_only (generic function with 1 method)</code></pre><p>We can test for correctness</p><pre><code class="language-julia hljs">sparse_only(A) == general(A)</code></pre><pre><code class="nohighlight hljs">true</code></pre><p>and benchmark the function</p><pre><code class="language-julia hljs">@benchmark sparse_only($A)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 301 samples with 1 evaluation.
+ Range (min … max):  15.765 ms …  19.260 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     16.511 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   16.646 ms ± 566.611 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+       ▁▃▅▄█▃▄ ▃ ▁▄   ▁                                         
+  ▃▁▃▃▄█████████▇██▆▅▇██▅▆▅█▇▅▃▆▅▃▆▅▆▄▃▄▁▁▃▁▄▃▅▃▁▃▁▁▃▃▁▁▁▁▁▃▁▃ ▄
+  15.8 ms         Histogram: frequency by time         18.6 ms &lt;
+
+ Memory estimate: 0 bytes, allocs estimate: 0.</code></pre><p>we can see that while writing the function requires understanding how CSC matrices are stored, the code is 600x faster. The thing is that this pattern gets repeated everywhere so we might try and abstract it away. My proposition is the iternz api.</p><pre><code class="language-julia hljs">using SparseExtra
+
+function iternz_only(x::AbstractMatrix)
+    s = zero(eltype(x))
+    for (v, i, j) in iternz(x)
+        if (i + j) % 7 == 0
+            s += v
+        end
+    end
+    return s
+end
+iternz_only(A) == general(A)</code></pre><pre><code class="nohighlight hljs">true</code></pre><pre><code class="language-julia hljs">@benchmark sparse_only($A)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 266 samples with 1 evaluation.
+ Range (min … max):  15.932 ms … 32.230 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     17.630 ms              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   18.806 ms ±  2.971 ms  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+    ▄█▅▂█▁▃                                                    
+  ▅█████████▄▅▅▆▅▆▆▄▄▄▄▅▃▁▃▄▃▄▃▁▅▄▁▃▃▃▁▁▃▁▃▃▃▁▄▃▃▁▁▃▃▃▁▃▃▁▁▃▃ ▃
+  15.9 ms         Histogram: frequency by time        28.3 ms &lt;
+
+ Memory estimate: 0 bytes, allocs estimate: 0.</code></pre><p>The speed is the same as the specialized version but there is no <code>@inbounds</code>, no need for ugly loops etc. As a bonus point it works on all of the specialized matrices</p><pre><code class="language-julia hljs">using LinearAlgebra
+all(iternz_only(i(A)) ≈ general(i(A)) for i in [Transpose, UpperTriangular, LowerTriangular, Diagonal, Symmetric]) # symmetric changes the order of exection.</code></pre><pre><code class="nohighlight hljs">true</code></pre><p>Since these interfaces are written using the iternz interface themselves, the codes generalize to the cases where these special matrices are combined, removing the need to do these tedious specialization.</p><p>For instance the 3 argument dot can be written as</p><pre><code class="language-julia hljs">function iternz_dot(x::AbstractVector, A::AbstractMatrix, y::AbstractVector)
+    (length(x), length(y)) == size(A) || throw(ArgumentError(&quot;bad shape&quot;))
+    acc = zero(promote_type(eltype(x), eltype(A), eltype(y)))
+    @inbounds for (v, i, j) in iternz(A)
+        acc += x[i] * v * y[j]
+    end
+    acc
+end
+
+
+const (x, y) = randn(n), randn(n);
+const SA = Symmetric(A);</code></pre><p>Correctness tests</p><pre><code class="language-julia hljs">dot(x, A, y) ≈ iternz_dot(x, A, y) &amp;&amp; dot(x, SA, y) ≈ iternz_dot(x, SA, y)</code></pre><pre><code class="nohighlight hljs">true</code></pre><p>Benchmarks</p><pre><code class="language-julia hljs">@benchmark dot($x, $A, $y)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 500 samples with 1 evaluation.
+ Range (min … max):  9.153 ms …  16.797 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     9.794 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   9.998 ms ± 744.517 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+    ▃    ▂▄█▃ ▁                                                
+  ██████▇██████▆█▅▄▄▅▄▄▄▄▄▄▅▄▄▄▃▄▃▄▄▃▃▃▁▃▁▁▂▂▂▁▂▁▁▁▁▁▁▁▁▁▁▁▁▂ ▄
+  9.15 ms         Histogram: frequency by time        12.9 ms &lt;
+
+ Memory estimate: 0 bytes, allocs estimate: 0.</code></pre><pre><code class="language-julia hljs">@benchmark iternz_dot($x, $A, $y)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 426 samples with 1 evaluation.
+ Range (min … max):  10.760 ms …  16.682 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     11.519 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   11.727 ms ± 741.895 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+         ▅█▄▁▂▂                                                 
+  ▅▇▇▆█▇▇████████▆█▄▆██▆▄▆▄▆▅▆▃▄▄▃▄▂▄▃▃▂▂▁▃▁▁▁▂▃▁▁▃▁▃▁▁▁▃▃▁▁▁▂ ▄
+  10.8 ms         Histogram: frequency by time         14.5 ms &lt;
+
+ Memory estimate: 0 bytes, allocs estimate: 0.</code></pre><pre><code class="language-julia hljs">@benchmark dot($x, $SA, $y)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 9 samples with 1 evaluation.
+ Range (min … max):  607.881 ms … 623.882 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     609.728 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   611.193 ms ±   4.900 ms  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+  ▁  █ ▁ ▁█      ▁                                            ▁  
+  █▁▁█▁█▁██▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  608 ms           Histogram: frequency by time          624 ms &lt;
+
+ Memory estimate: 0 bytes, allocs estimate: 0.</code></pre><pre><code class="language-julia hljs">@benchmark iternz_dot($x, $SA, $y)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 440 samples with 1 evaluation.
+ Range (min … max):  10.576 ms …  17.101 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     11.173 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   11.371 ms ± 740.788 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+   ▂▃   █▆▃▄▃                                                   
+  ▆███████████▇▆▇▇▅▆▆▆▅▄▅▅▃▄▃▃▃▃▃▂▁▂▁▁▂▂▃▁▃▁▁▂▂▁▂▁▁▁▂▁▁▁▃▁▁▁▁▂ ▃
+  10.6 ms         Histogram: frequency by time         14.4 ms &lt;
+
+ Memory estimate: 0 bytes, allocs estimate: 0.</code></pre><h2 id="API:"><a class="docs-heading-anchor" href="#API:">API:</a><a id="API:-1"></a><a class="docs-heading-anchor-permalink" href="#API:" title="Permalink"></a></h2><p>The Api is pretty simple, the <code>iternz(A)</code> should return an iteratable such that</p><pre><code class="language-julia hljs">all(A[ind...] == v for (v, ind...) in iternz(A))</code></pre><p>If the matrix is a container for a different type, the inner iteration should be done via iternz. This repo provides the <code>IterateNZ</code> container whose sole pupose is to hold the array to overload <code>Base.iterate</code>. Additionally matrices have the <code>skip_col</code> and <code>skip_row_to</code> functions defined. The idea that if meaningful, this should return a state such that iterating on that state will give the first element of the next column or in the case of <code>skip_row_to(cont, state, i)</code>, iterate should return <code>(i, j)</code> where j is the current column.</p><h2 id="TODO"><a class="docs-heading-anchor" href="#TODO">TODO</a><a id="TODO-1"></a><a class="docs-heading-anchor-permalink" href="#TODO" title="Permalink"></a></h2><ul><li>test with non-one based indexing</li></ul><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../par_ldiv/">Parallel <code>ldiv</code> »</a><div class="flexbox-break"></div><p class="footer-message"><a href="https://github.com/SobhanMP/SparseExtra.jl">SparseExtra.jl</a> v0.1.0 docs powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.22 on <span class="colophon-date" title="Tuesday 26 July 2022 18:34">Tuesday 26 July 2022</span>. Using Julia version 1.8.0-rc3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
