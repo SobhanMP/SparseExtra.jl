@@ -13,9 +13,9 @@ end
 
 function DijkstraState(nv, T, srcs::AbstractVector{U}) where U
     state = DijkstraState{T,U}(
-        zeros(U, nv), 
-        fill(typemax(T), nv), 
-        zeros(Bool, nv), 
+        zeros(U, nv),
+        fill(typemax(T), nv),
+        zeros(Bool, nv),
         PriorityQueue{U,T,FasterForward}(FasterForward()))
     set_src(state, srcs)
     return state
@@ -44,7 +44,7 @@ function dijkstra(
     @inbounds while !isempty(state.q)
         peek(state.q) == target && break
         u = dequeue!(state.q)
-         
+
         d = distance[u]
         visited[u] && continue
         visited[u] = true
@@ -72,12 +72,12 @@ function extract_path(state::DijkstraState{T, U}, d) where {T, U}
 end
 
 
-struct Path2Edge{T}
-    x::Vector{T}
+struct Path2Edge{T,V<:AbstractVector{T}}
+    x::V
     e::Int
-    function Path2Edge(x::Vector{T}, e=length(x)) where T
+    function Path2Edge(x::AbstractVector, e=length(x)) where T
         @assert length(x) >= e
-        new{T}(x, e)
+        new{eltype(x),typeof(x)}(x, e)
     end
 end
 
