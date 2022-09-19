@@ -1,9 +1,3 @@
-# ![example workflow](https://github.com/sobhanmp/SparseExtra.jl/actions/workflows/ci.yml/badge.svg)
-# [![codecov](https://codecov.io/gh/SobhanMP/SparseExtra.jl/branch/main/graph/badge.svg?token=MzXyDmfScn)](https://codecov.io/gh/SobhanMP/SparseExtra.jl)
-
-# Collections of mostly sparse stuff developed by me.
-
-
 # # The `iternz` API
 
 # This returns an iterator over the structural non-zero elements of the array (elements that aren't zero due to the structure not zero elements) i.e.
@@ -21,7 +15,7 @@
 
 using BenchmarkTools, SparseArrays
 const n = 10_000
-const A = sprandn(n, n, min(1000, 0.1 * n*n) / n / n);
+const A = sprandn(n, n, 5 / n);
 
 function general(x::AbstractMatrix)
     s = zero(eltype(x))
@@ -139,22 +133,3 @@ dot(x, A, y) ≈ iternz_dot(x, A, y) && dot(x, SA, y) ≈ iternz_dot(x, SA, y)
 # ## TODO
 # - test with non-one based indexing
 
-
-
-# # parallel ldiv!
-using SparseExtra, LinearAlgebra, SparseArrays, BenchmarkTools
-const C = A + I
-const B = Matrix(sprandn(size(C)..., 0.1));
-const F = lu(C);
-const X = similar(B);
-
-# Standard:
-@benchmark ldiv!($X, $F, $B)
-
-#With FLoops.jl:
-
-@benchmark par_solve!($X, $F, $B)
-
-# with manual loops
-
-@benchmark par_ldiv!_t($X, $F, $B)

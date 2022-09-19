@@ -1,6 +1,6 @@
 name = "SparseExtra"
 uuid = "9b3c4d32-3d7d-4a87-a5c7-b3f87cf9d22b"
-authors = ["eta "]
+authors = ["Sobhan Mohammadpour"]
 version = "0.1.0"
 
 [deps]
@@ -16,6 +16,14 @@ VectorizationBase = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+julia = "1"
+DataStructures = "0.18"
+FLoops = "0.2"
+StaticArrays = "1"
+VectorizationBase = "0.21"
+
 
 [targets]
 test = ["Graphs", "SparseArrays", "Test"]

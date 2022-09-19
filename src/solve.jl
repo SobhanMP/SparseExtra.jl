@@ -2,6 +2,7 @@
 solve lu\\b in parallel
 """
 const LU = Union{Transpose{T, <: UmfpackLU{T}}, UmfpackLU{T}} where T
+
 const LU_has_lock = hasfield(UmfpackLU, :lock)
 if LU_has_lock
     if isdefined(UMFPACK, :duplicate)
@@ -10,7 +11,7 @@ if LU_has_lock
             UMFPACK.duplicate(F::Transpose{T, <:UmfpackLU}) where T = Transpose(duplicate(F.parent))
             UMFPACK.duplicate(F::Adjoint{T, <:UmfpackLU}) where T = Adjoint(duplicate(F.parent))
             Base.copy(F::LU) = duplicate(F)
-        end    
+        end
     end
 else
     @eval begin
@@ -19,6 +20,9 @@ else
     end
 end
 @inline pfno(a...) = nothing
+"""
+ldiv! but in parallel. use `cols`` to skip columns and `f(col, index)` to apply a thread safe function to that column.
+"""
 function par_solve!(x, lu::LU, b::AbstractMatrix; cols=axes(b, 2), f::F=nothing) where F
     if LU_has_lock
         @floop for i in cols
@@ -37,6 +41,9 @@ function par_solve!(x, lu::LU, b::AbstractMatrix; cols=axes(b, 2), f::F=nothing)
     return x
 end
 par_solve(lu::LU, b::AbstractMatrix; cols=axes(b, 2)) = par_solve!(similar(b), lu, b; cols)
+"""
+like par_solve but use `f` and `g` to create the column (and then destroy it).
+"""
 function par_solve_f!(x, f!::F, g!::G, lu::LU{T}; cols=1:size(lu, 2)) where {T, F, G}
     size(x, 1) == size(lu, 1) || error("can't")
     if LU_has_lock
@@ -71,6 +78,9 @@ function _par_inv_fin(x, i)
     return
 end
 
+"""
+return `lu \\ I`
+"""
 par_inv!(x, lu::LU; cols=1:size(lu, 2)) = par_solve_f!(x, _par_inv_init, _par_inv_fin, lu; cols)
 par_inv(lu::LU{T}; cols=1:size(lu, 2)) where T = par_inv!(Matrix{T}(undef, size(lu)...), lu; cols)
 

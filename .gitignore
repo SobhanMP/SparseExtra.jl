@@ -1,3 +1,4 @@
 .gitignore
 Manifest.toml
 .vscode
+docs/build
