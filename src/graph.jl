@@ -99,12 +99,12 @@ end
 struct Path2Edge{T,V<:AbstractVector{T}}
     x::V
     e::Int
-    function Path2Edge(x::AbstractVector, e=length(x)) where T
+    function Path2Edge{T,V}(x::V, e=length(x)) where {T,V<:AbstractVector{T}}
         @assert length(x) >= e
-        new{eltype(x),typeof(x)}(x, e)
+        new{T,V}(x, e)
     end
 end
-
+Path2Edge(x::V, e=length(x)) where{T,V<:AbstractVector{T}} = Path2Edge{T,V}(x, e)
 Base.length(p::Path2Edge) = p.e - 1
 Base.eltype(::Path2Edge{T}) where {T} = NTuple{2,T}
 Base.iterate(p::Path2Edge, state=1) =
