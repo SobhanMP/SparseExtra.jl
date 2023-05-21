@@ -19,6 +19,8 @@ else
         SparseArrays._checkbuffers(S::AbstractSparseMatrixCSC) = (@assert _goodbuffers(S); S)
     end
 end
+
+# Base.copy(F::LU; a...) = copy(F)
 @inline pfno(a...) = nothing
 """
 ldiv! but in parallel. use `cols`` to skip columns and `f(col, index)` to apply a thread safe function to that column.

@@ -50,6 +50,17 @@ sparse_like(t::SparseMatrixCSC) =
     SparseMatrixCSC(t.m, t.n, t.colptr, t.rowval, copy(t.nzval))
 
 
+@static if isdefined(SparseArrays, :FixedSparseCSC)
+    using SparseArrays: FixedSparseCSC
+    sparse_like(t::FixedSparseCSC, T::Type) =
+    FixedSparseCSC(t.m, t.n, t.colptr, t.rowval, Vector{T}(undef, nnz(t)))
+    sparse_like(t::FixedSparseCSC, z) =
+    FixedSparseCSC(t.m, t.n, t.colptr, t.rowval, fill(z, nnz(t)))
+    sparse_like(t::FixedSparseCSC, z::Vector) =
+    FixedSparseCSC(t.m, t.n, t.colptr, t.rowval, z)
+    sparse_like(t::FixedSparseCSC) =
+    FixedSparseCSC(t.m, t.n, t.colptr, t.rowval, copy(t.nzval))
+end
 
 function getindex_(A::SparseMatrixCSC{Tv, Ti}, i0::T, i1::T)::T where {Tv, Ti, T}
     @boundscheck checkbounds(A, i0, i1)
