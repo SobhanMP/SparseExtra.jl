@@ -28,6 +28,20 @@ test_iternz_arr(_a::AbstractArray{T, N}, it=iternz(_a)) where {T, N} = begin
         @test iszero(a[I]) || Tuple(I) ∈ seen
     end
 end
+
+
+
+@testset "iternz (Symmetric/Hermitian)" begin
+    for i in 1:20
+        for uplo in [:U, :L]
+            A = Symmetric([randn(4, 4) for _ in 1:i, _ in 1:i], uplo)
+            test_iternz_arr(A)
+            B = Hermitian([randn(i * 2,  i * 2) .+ randn(i * 2, i * 2) * 1im for _ in 1:i, _ in 1:i], uplo)
+            test_iternz_arr(B)
+        end
+    end
+end
+
 @testset "iternz (Symmetric)" begin
     for i in 1:20
         for uplo in [:U, :L]
@@ -38,6 +52,7 @@ end
         end
     end
 end
+
 
 
 @testset "iternz (SparseMatrixCSC)" begin

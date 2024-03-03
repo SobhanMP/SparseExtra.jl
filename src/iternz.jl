@@ -209,39 +209,45 @@ end
     nothing
 end
 
+const SymOrHerm = Union{<:Symmetric, <:Hermitian}
+Base.IteratorSize(::IterateNZ{2, <:SymOrHerm}) = Base.SizeUnknown()
 
-Base.IteratorSize(::IterateNZ{2, <:Symmetric}) = Base.SizeUnknown()
-
-@inline Base.iterate(x::IterateNZ{2, <:Symmetric}) =
+@inline Base.iterate(x::IterateNZ{2, <:SymOrHerm}) =
 let iterator = iternz(x.m.data)
     iternzsym(x.m, iterator, iterate(iterator))
 end
+# state is 
+# - the iterator to the inner internz
+# - the (v, i, j) Tuple
+# - a boolean that indicates we have to return the transposed
 
-@inline Base.iterate(x::IterateNZ{2, <:Symmetric}, state) =
+@inline Base.iterate(x::IterateNZ{2, <:SymOrHerm}, state) =
 let (iterator, (v, i, j), r, s) = state
     if r
-        (v, j, i), (iterator, (v, i, j), false, s)
+        (isa(x.m, Symmetric) ? transpose(v) : adjoint(v), j, i), (iterator, (v, i, j), false, s)
     else
         iternzsym(x.m, iterator, iterate(iterator, s))
     end
 end
 
-@inline iternzsym(m::Symmetric, iterator, a) = @inbounds begin
+@inline iternzsym(m::SymOrHerm, iterator, a) = @inbounds begin
     while a !== nothing
         r, state = a
-        (_, i, j) = r
-        if m.uplo == 'U'
-            i <= j && return r, (iterator, r, i != j, state)
+        (v, i, j) = r
+        if i == j
+            v1 = isa(m, Symmetric) ? LinearAlgebra.symmetric(v, LinearAlgebra.sym_uplo(m.uplo)) : LinearAlgebra.hermitian(v, LinearAlgebra.sym_uplo(m.uplo))
+            return (v1, i, i), (iterator, r, false, state)
+        elseif m.uplo == 'U'
+            i <= j && return r, (iterator, r, true, state)
             state = skip_col(iterator, state)
         elseif m.uplo == 'L'
-            i >= j && return r, (iterator, r, i != j, state)
+            i >= j && return r, (iterator, r, true, state)
             state = skip_row_to(iterator, state, j)
         end
         a = iterate(iterator, state)
     end
     nothing
 end
-
 
 
 
